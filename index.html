@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List React App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="container">
+        <div class="header">
+            <h1><i class="fas fa-tasks"></i> React Todo List</h1>
+            <p>Управляйте своими задачами эффективно</p>
+        </div>
+        
+        <div id="root"></div>
+    </main>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        function TodoApp() {
+            const [tasks, setTasks] = React.useState(() => {
+                const savedTasks = localStorage.getItem('todoTasks');
+                return savedTasks ? JSON.parse(savedTasks) : [];
+            });
+            
+            const [newTask, setNewTask] = React.useState('');
+            const [filter, setFilter] = React.useState('all');
+            
+            React.useEffect(() => {
+                localStorage.setItem('todoTasks', JSON.stringify(tasks));
+            }, [tasks]);
+            
+            const addTask = () => {
+                if (newTask.trim() !== '') {
+                    const newTaskItem = {
+                        id: Date.now(),
+                        text: newTask,
+                        completed: false
+                    };
+                    
+                    setTasks([...tasks, newTaskItem]);
+                    setNewTask('');
+                }
+            };
+            
+            const deleteTask = (taskId) => {
+                setTasks(tasks.filter(task => task.id !== taskId));
+            };
+            
+            const toggleTaskStatus = (taskId) => {
+                setTasks(tasks.map(task => 
+                    task.id === taskId ? { ...task, completed: !task.completed } : task
+                ));
+            };
+            
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            };
+            
+            const filteredTasks = tasks.filter(task => {
+                if (filter === 'active') return !task.completed;
+                if (filter === 'completed') return task.completed;
+                return true;
+            });
+            
+            const activeTasksCount = tasks.filter(task => !task.completed).length;
+            const completedTasksCount = tasks.filter(task => task.completed).length;
+            
+            return (
+                <div className="app-content">
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            className="task-input"
+                            placeholder="Введите новую задачу..."
+                            value={newTask}
+                            onChange={(e) => setNewTask(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                        />
+                        <button className="add-btn" onClick={addTask}>
+                            <i className="fas fa-plus"></i> Добавить
+                        </button>
+                    </div>
+                    
+                    <div className="filters">
+                        <button 
+                            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                            onClick={() => setFilter('all')}
+                        >
+                            Все ({tasks.length})
+                        </button>
+                        <button 
+                            className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
+                            onClick={() => setFilter('active')}
+                        >
+                            Активные ({activeTasksCount})
+                        </button>
+                        <button 
+                            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+                            onClick={() => setFilter('completed')}
+                        >
+                            Выполненные ({completedTasksCount})
+                        </button>
+                    </div>
+                    
+                    <ul className="task-list">
+                        {filteredTasks.length > 0 ? (
+                            filteredTasks.map(task => (
+                                <li className="task-item" key={task.id}>
+                                    <input
+                                        type="checkbox"
+                                        className="task-checkbox"
+                                        checked={task.completed}
+                                        onChange={() => toggleTaskStatus(task.id)}
+                                    />
+                                    <span className={`task-text ${task.completed ? 'completed' : ''}`}>
+                                        {task.text}
+                                    </span>
+                                    <button 
+                                        className="delete-btn"
+                                        onClick={() => deleteTask(task.id)}
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </li>
+                            ))
+                        ) : (
+                            <div className="empty-state">
+                                <i className="fas fa-clipboard-list"></i>
+                                <p>
+                                    {filter === 'completed' 
+                                        ? 'Нет выполненных задач' 
+                                        : filter === 'active' 
+                                            ? 'Нет активных задач' 
+                                            : 'Добавьте свою первую задачу'}
+                                </p>
+                            </div>
+                        )}
+                    </ul>
+                    
+                    <div className="stats">
+                        <div>Всего задач: {tasks.length}</div>
+                        <div>Выполнено: {completedTasksCount}</div>
+                    </div>
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TodoApp />);
+    </script>
+</body>
+</html>
